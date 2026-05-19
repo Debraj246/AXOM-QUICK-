@@ -1,0 +1,6 @@
+{
+  "name": "AxomQuick",
+  "description": "Futuristic hyperlocal delivery super app for Barpeta, Assam, featuring AI recommendations, voice assistance, and regional service categories.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
