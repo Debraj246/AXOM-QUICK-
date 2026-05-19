@@ -1,0 +1,103 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer order information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "total": { "type": "number" },
+        "status": { "type": "string" },
+        "paymentMethod": { "type": "string" },
+        "address": { "type": "string" },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "total", "status", "paymentMethod"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "In-app and push notification record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "icon": { "type": "string" },
+        "type": { "type": "string", "enum": ["order", "offer", "alert", "promotion"] },
+        "link": { "type": "string" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "body", "type", "read", "createdAt"]
+    },
+    "MessagingToken": {
+      "title": "MessagingToken",
+      "description": "FCM device tokens for push notifications",
+      "type": "object",
+      "properties": {
+        "token": { "type": "string" },
+        "deviceType": { "type": "string" },
+        "lastUsed": { "type": "string", "format": "date-time" }
+      },
+      "required": ["token", "lastUsed"]
+    },
+    "Broadcast": {
+      "title": "Broadcast",
+      "description": "Global notifications sent by admin",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "type": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "target": { "type": "string", "enum": ["all", "verified", "premium"] }
+      },
+      "required": ["title", "body", "type", "createdAt", "target"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/users/{userId}/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "User specific notifications"
+    },
+    "/users/{userId}/tokens/{tokenId}": {
+      "schema": "MessagingToken",
+      "description": "User FCM tokens"
+    },
+    "/broadcasts/{broadcastId}": {
+      "schema": "Broadcast",
+      "description": "Global admin broadcasts"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Customer orders"
+    },
+    "/orders/{orderId}/items/{itemId}": {
+      "schema": { "title": "OrderItem", "type": "object", "properties": { "name": { "type": "string" }, "price": { "type": "number" }, "quantity": { "type": "number" } } },
+      "description": "Items in an order"
+    }
+  }
+}

@@ -1,0 +1,91 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    
+    // --- Validation Helpers ---
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email']) 
+        && data.uid is string 
+        && data.email is string 
+        && data.email.size() <= 256;
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll(['userId', 'total', 'status', 'paymentMethod', 'address', 'lat', 'lng', 'items', 'id', 'createdAt', 'updatedAt'])
+        && data.userId == request.auth.uid
+        && data.total is number
+        && data.status is string
+        && data.paymentMethod is string
+        && data.address is string
+        && data.lat is number
+        && data.lng is number
+        && data.items is list
+        && data.id is string
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidNotification(data) {
+      return data.keys().hasAll(['title', 'body', 'type', 'read', 'createdAt'])
+        && data.title is string
+        && data.body is string
+        && data.type is string
+        && data.read is boolean
+        && data.createdAt is timestamp;
+    }
+
+    function isValidToken(data) {
+      return data.keys().hasAll(['token', 'lastUsed'])
+        && data.token is string
+        && data.lastUsed is timestamp;
+    }
+
+    // --- Matches ---
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create, update: if isOwner(userId) && isValidUser(incoming());
+    }
+
+    match /users/{userId}/notifications/{notificationId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidNotification(incoming());
+      allow delete: if isOwner(userId);
+    }
+
+    match /users/{userId}/tokens/{tokenId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidToken(incoming());
+      allow delete: if isOwner(userId);
+    }
+
+    match /broadcasts/{broadcastId} {
+      allow read: if isSignedIn();
+      // Admin only write (simulated for this environment)
+      allow write: if false; 
+    }
+
+    match /orders/{orderId} {
+      allow read: if isSignedIn() && (existing().userId == request.auth.uid);
+      allow create: if isSignedIn() && isValidOrder(incoming());
+      allow update: if isSignedIn() && existing().userId == request.auth.uid 
+                   && incoming().userId == existing().userId
+                   && isValidOrder(incoming());
+    }
+
+    match /orders/{orderId}/items/{itemId} {
+      // Relational Gate: Parent order must belong to user
+      allow read, write: if isSignedIn() && get(/databases/$(database)/documents/orders/$(orderId)).data.userId == request.auth.uid;
+    }
+  }
+}
